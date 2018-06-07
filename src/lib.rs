@@ -25,9 +25,8 @@ impl FutureStates {
         }
     }
 
-    pub fn add(&mut self, word: &str) {
-        let entry = self.states.entry(String::from(word)).or_insert(0);
-        *entry += 1;
+    pub fn add_future_state(&mut self, word: &str) {
+        *self.states.entry(String::from(word)).or_insert(0) += 1;
         self.count += 1;
     }
 
@@ -66,20 +65,17 @@ impl Model {
 
         for word in string.split_whitespace() {
             if let Some(prev_word) = prev_word {
-                let mut future_states = self.given(prev_word);
-                future_states.add(word);
-                self.states.insert(String::from(prev_word), future_states);
+                self.given(prev_word).add_future_state(word);
             }
 
             prev_word = Some(word);
         }
     }
 
-    pub fn given(&self, given: &str) -> FutureStates {
-        match self.states.get(given) {
-            Some(v) => v.clone(),
-            None => FutureStates::new(),
-        }
+    pub fn given(&mut self, given: &str) -> &mut FutureStates {
+        self.states
+            .entry(String::from(given))
+            .or_insert(FutureStates::new())
     }
 
     pub fn generator(&self) -> Generator {
