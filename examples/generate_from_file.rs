@@ -6,7 +6,7 @@ use std::io::prelude::*;
 
 use markov::*;
 
-fn main() {
+fn load_text() -> String {
     let mut args = env::args();
     args.next();
     let filename = args.next().expect("Please pass filename as first arg");
@@ -17,12 +17,18 @@ fn main() {
     let mut contents = String::new();
     f.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
+    
+    contents
+}
+
+fn main() {
+    let text = load_text();
 
     let mut model = Model::new();
-    model.ingest(&contents);
+    model.ingest(&text);
 
     let mut max_words = 1000;
-    for word in model.random_state() {
+    for word in model.generator() {
         print!("{} ", word);
         max_words -= 1;
         if max_words == 0 {

@@ -14,7 +14,7 @@ fn main() {
     model.ingest(text);
 
     let mut max_words = 100;
-    for word in model.state("sometimes") {
+    for word in model.generator() {
         print!("{} ", word);
         max_words -= 1;
         if max_words == 0 {
