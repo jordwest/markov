@@ -26,13 +26,9 @@ impl FutureStates {
     }
 
     pub fn add(&mut self, word: &str) {
-        let next_count = match self.states.get(word) {
-            Some(v) => v + 1,
-            None => 1,
-        };
-
+        let entry = self.states.entry(String::from(word)).or_insert(0);
+        *entry += 1;
         self.count += 1;
-        self.states.insert(String::from(word), next_count);
     }
 
     pub fn choose_random(&self) -> Option<&str> {
