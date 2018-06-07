@@ -10,8 +10,8 @@ fn main() {
         my dog likes eating too but doesn't always like the weather
         even when it's a nice day";
 
-    let mut model = Model::new();
-    model.ingest(text);
+    let mut model: Model<String> = Model::new();
+    model.ingest(text.split_whitespace());
 
     for word in model.generator().take(100) {
         print!("{} ", word);
