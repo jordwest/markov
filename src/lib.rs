@@ -1,16 +1,18 @@
 extern crate rand;
 use std::collections::*;
+use std::hash::Hash;
+use std::cmp::Eq;
 
 #[derive(Clone)]
-pub struct FutureStates {
+pub struct FutureStates<State: Hash + Eq> {
     // Total number of words ingested
     count: u32,
 
     // Next word and the number of occurrences
-    states: HashMap<String, u32>,
+    states: HashMap<State, u32>,
 }
 
-impl FutureStates {
+impl <State: Hash + Eq> FutureStates<State> {
     fn new() -> Self {
         FutureStates {
             count: 0,
@@ -18,29 +20,29 @@ impl FutureStates {
         }
     }
 
-    pub fn chance_of(&self, next: &str) -> f32 {
-        match self.states.get(next) {
+    pub fn chance_of<Q: Into<State>>(&self, next: Q) -> f32 {
+        match self.states.get(&next.into()) {
             Some(v) => (*v as f32) / (self.count as f32),
             None => return 0.0,
         }
     }
 
-    pub fn add_future_state(&mut self, word: &str) {
-        *self.states.entry(String::from(word)).or_insert(0) += 1;
+    pub fn add_future_state<Q: Into<State>>(&mut self, state: Q) {
+        *self.states.entry(state.into()).or_insert(0) += 1;
         self.count += 1;
     }
 
-    pub fn choose_random(&self) -> Option<&str> {
+    pub fn choose_random(&self) -> Option<&State> {
         if self.count == 0 {
             return None;
         }
 
         let mut cumulative_count = 0;
         let v = (rand::random::<f64>() * (self.count as f64)) as u32;
-        for (next_word, count) in self.states.iter() {
+        for (next_state, count) in self.states.iter() {
             cumulative_count += count;
             if cumulative_count >= v {
-                return Some(next_word);
+                return Some(&next_state);
             }
         }
 
@@ -49,36 +51,40 @@ impl FutureStates {
 }
 
 #[derive(Clone)]
-pub struct Model {
-    states: HashMap<String, FutureStates>,
+pub struct Model<State: Hash + Eq + Clone> {
+    states: HashMap<State, FutureStates<State>>,
 }
 
-impl Model {
+impl<State: Hash + Eq + Clone> Model<State> {
     pub fn new() -> Self {
         Model {
             states: HashMap::new(),
         }
     }
 
-    pub fn ingest(&mut self, string: &str) {
-        let mut prev_word = None;
+    pub fn ingest<Q, I>(&mut self, sequence: I)
+        where Q: Into<State>,
+              I: Iterator<Item=Q>,
+    {
+        let mut prev_state = None;
 
-        for word in string.split_whitespace() {
-            if let Some(prev_word) = prev_word {
-                self.given(prev_word).add_future_state(word);
+        for state in sequence {
+            let state = state.into();
+            if let Some(prev_state) = prev_state {
+                self.given(prev_state).add_future_state(state.clone());
             }
 
-            prev_word = Some(word);
+            prev_state = Some(state);
         }
     }
 
-    pub fn given(&mut self, given: &str) -> &mut FutureStates {
+    pub fn given<Q: Into<State>>(&mut self, given: Q) -> &mut FutureStates<State> {
         self.states
-            .entry(String::from(given))
+            .entry(given.into())
             .or_insert(FutureStates::new())
     }
 
-    pub fn generator(&self) -> Generator {
+    pub fn generator(&self) -> Generator<State> {
         let word = self.states.keys().next().unwrap();
         Generator {
             current_state: word.clone(),
@@ -87,18 +93,18 @@ impl Model {
     }
 }
 
-pub struct Generator {
-    current_state: String,
-    model: Model,
+pub struct Generator<State: Hash + Eq + Clone> {
+    current_state: State,
+    model: Model<State>,
 }
 
-impl std::iter::Iterator for Generator {
-    type Item = String;
+impl<State: Hash + Eq + Clone> std::iter::Iterator for Generator<State> {
+    type Item = State;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let targets = self.model.given(&self.current_state);
+        let targets = self.model.given(self.current_state.clone());
         let next_state = targets.choose_random()?;
-        self.current_state = String::from(next_state);
-        Some(String::from(next_state))
+        self.current_state = next_state.clone();
+        Some(next_state.clone())
     }
 }

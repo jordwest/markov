@@ -24,8 +24,8 @@ fn load_text() -> String {
 fn main() {
     let text = load_text();
 
-    let mut model = Model::new();
-    model.ingest(&text);
+    let mut model: Model<String> = Model::new();
+    model.ingest(text.split_whitespace());
 
     let mut max_words = 1000;
     for word in model.generator() {

@@ -24,6 +24,6 @@ fn it_creates_a_markov_chain_and_ingests_a_string() {
 
     assert_eq!(
         model.given("sometimes").choose_random(),
-        Some("I"),
+        Some(String::from("I")),
     );
 }
