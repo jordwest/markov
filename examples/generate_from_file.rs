@@ -27,12 +27,7 @@ fn main() {
     let mut model: Model<String> = Model::new();
     model.ingest(text.split_whitespace());
 
-    let mut max_words = 1000;
-    for word in model.generator() {
+    for word in model.generator().take(1000) {
         print!("{} ", word);
-        max_words -= 1;
-        if max_words == 0 {
-            break;
-        }
     }
 }

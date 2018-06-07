@@ -32,12 +32,7 @@ fn main() {
     ];
     model.ingest(history.iter());
 
-    let mut max_words = 50;
-    for word in model.generator() {
-        print!("{:?} > ", word);
-        max_words -= 1;
-        if max_words == 0 {
-            break;
-        }
+    for location in model.generator().take(50) {
+        print!("{:?} > ", location);
     }
 }

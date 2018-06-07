@@ -13,12 +13,7 @@ fn main() {
     let mut model = Model::new();
     model.ingest(text);
 
-    let mut max_words = 100;
-    for word in model.generator() {
+    for word in model.generator().take(100) {
         print!("{} ", word);
-        max_words -= 1;
-        if max_words == 0 {
-            break;
-        }
     }
 }
